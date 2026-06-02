@@ -1,0 +1,480 @@
+:root {
+  --page-bg: #07090d;
+  --primary: #52f7d2;
+  --secondary: #ff4f9a;
+  --accent: #ffd166;
+  --panel: rgba(12, 16, 22, 0.78);
+  --panel-strong: rgba(12, 16, 22, 0.92);
+  --line: rgba(255, 255, 255, 0.14);
+  --text: #f6f8fb;
+  --muted: #a7b1bf;
+  color: var(--text);
+  background: var(--page-bg);
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 15% 20%, color-mix(in srgb, var(--primary) 14%, transparent), transparent 30%),
+    radial-gradient(circle at 82% 72%, color-mix(in srgb, var(--secondary) 14%, transparent), transparent 34%),
+    var(--page-bg);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+.appShell {
+  position: relative;
+  min-height: 100vh;
+  padding: 24px;
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) 1fr minmax(260px, 320px);
+  grid-template-rows: auto 1fr auto;
+  gap: 16px;
+  isolation: isolate;
+}
+
+.visualizer {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.58)),
+    var(--page-bg);
+}
+
+.visualizer canvas {
+  display: block;
+}
+
+.visualizerOverlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.visualizer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: linear-gradient(to bottom, black, transparent 82%);
+}
+
+.topBar,
+.controlDeck,
+.sidePanel,
+.themePanel {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 18px 80px rgba(0, 0, 0, 0.35);
+}
+
+.topBar {
+  grid-column: 1 / -1;
+  min-height: 78px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+}
+
+.brand,
+.nowPlaying,
+.panelHeader,
+.volume {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brandIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: #03100d;
+  background: var(--primary);
+  box-shadow: 0 0 30px color-mix(in srgb, var(--primary) 35%, transparent);
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(1.1rem, 2vw, 1.55rem);
+  letter-spacing: 0;
+}
+
+h2 {
+  font-size: 0.9rem;
+  letter-spacing: 0;
+}
+
+.brand p,
+.nowPlaying small,
+.trackItem small,
+.timeline span {
+  color: var(--muted);
+}
+
+.primaryButton,
+.iconButton,
+.smallIconButton,
+.playButton,
+.themeButton,
+.segmented button,
+.trackItem {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.07);
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.primaryButton:hover,
+.iconButton:hover,
+.smallIconButton:hover,
+.playButton:hover,
+.themeButton:hover,
+.segmented button:hover,
+.trackItem:hover {
+  border-color: color-mix(in srgb, var(--primary) 62%, white 0%);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.primaryButton {
+  min-height: 42px;
+  border-radius: 8px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: #03100d;
+  background: var(--primary);
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.sidePanel,
+.themePanel {
+  grid-row: 2 / 4;
+  border-radius: 8px;
+  padding: 14px;
+  min-height: 0;
+}
+
+.sidePanel {
+  grid-column: 1;
+}
+
+.themePanel {
+  grid-column: 3;
+}
+
+.panelHeader {
+  min-height: 34px;
+  justify-content: flex-start;
+}
+
+.panelHeader .smallIconButton {
+  margin-left: auto;
+}
+
+.smallIconButton,
+.iconButton,
+.playButton {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+}
+
+.playButton {
+  width: 56px;
+  height: 56px;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+.trackList {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  max-height: calc(100vh - 190px);
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.trackItem {
+  position: relative;
+  width: 100%;
+  min-height: 64px;
+  border-radius: 8px;
+  padding: 10px 42px 10px 12px;
+  display: grid;
+  gap: 4px;
+  text-align: left;
+}
+
+.trackItem span,
+.trackItem small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trackItem.active {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 16%, transparent);
+}
+
+.removeTrack {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  width: 26px;
+  height: 26px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  color: var(--muted);
+}
+
+.removeTrack:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.themeGrid {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.themeButton {
+  min-height: 46px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.themeButton.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.swatches {
+  display: flex;
+  align-items: center;
+}
+
+.swatches i {
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 50%;
+  display: block;
+  margin-left: -4px;
+}
+
+.swatches i:first-child {
+  margin-left: 0;
+}
+
+.modeBlock {
+  margin-top: 22px;
+}
+
+.panelHeader.compact {
+  margin-bottom: 10px;
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.segmented button {
+  min-height: 34px;
+  border-radius: 6px;
+}
+
+.segmented button.active {
+  color: #03100d;
+  background: var(--accent);
+}
+
+.controlDeck {
+  grid-column: 2;
+  grid-row: 3;
+  align-self: end;
+  min-height: 112px;
+  border-radius: 8px;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) auto minmax(220px, 1.5fr) minmax(120px, 0.8fr);
+  gap: 14px;
+  align-items: center;
+}
+
+.nowPlaying {
+  min-width: 0;
+}
+
+.nowPlaying div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.nowPlaying span,
+.nowPlaying small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.transport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.timeline {
+  display: grid;
+  grid-template-columns: 44px minmax(100px, 1fr) 44px;
+  gap: 10px;
+  align-items: center;
+}
+
+.timeline span {
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--primary);
+}
+
+.volume {
+  min-width: 120px;
+}
+
+@media (max-width: 1040px) {
+  body {
+    overflow: auto;
+  }
+
+  .appShell {
+    min-height: 100svh;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto minmax(330px, 1fr) auto auto;
+  }
+
+  .sidePanel {
+    grid-column: 1;
+    grid-row: 4;
+  }
+
+  .themePanel {
+    grid-column: 2;
+    grid-row: 4;
+  }
+
+  .controlDeck {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    grid-template-columns: 1fr auto;
+  }
+
+  .timeline,
+  .volume {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 680px) {
+  .appShell {
+    padding: 12px;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(330px, 1fr) auto auto auto;
+  }
+
+  .topBar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .primaryButton {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .controlDeck {
+    grid-template-columns: 1fr;
+  }
+
+  .transport {
+    order: -1;
+  }
+
+  .sidePanel {
+    grid-column: 1;
+    grid-row: 4;
+  }
+
+  .themePanel {
+    grid-column: 1;
+    grid-row: 5;
+  }
+
+  .trackList {
+    max-height: 260px;
+  }
+}
