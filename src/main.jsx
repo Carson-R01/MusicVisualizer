@@ -5,6 +5,7 @@ import {
   CirclePause,
   CirclePlay,
   ListMusic,
+  Maximize2,
   Music,
   Palette,
   Plus,
@@ -381,6 +382,7 @@ function App() {
   const [volume, setVolume] = useState(0.8);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [isPresentationMode, setIsPresentationMode] = useState(false);
 
   const theme = useMemo(() => themes.find((item) => item.id === themeId) || themes[0], [themeId]);
   const currentTrack = playlist[currentIndex] || playlist[0];
@@ -396,6 +398,14 @@ function App() {
     if (audioRef.current) audioRef.current.volume = volume;
     if (demoGainRef.current) demoGainRef.current.gain.value = volume * 0.32;
   }, [volume]);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement) setIsPresentationMode(false);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   useEffect(() => () => {
     objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
@@ -527,8 +537,29 @@ function App() {
     setProgress(value);
   };
 
+  const enterPresentationMode = async () => {
+    setIsPresentationMode(true);
+    if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+      try {
+        await document.documentElement.requestFullscreen();
+      } catch {
+        setIsPresentationMode(true);
+      }
+    }
+  };
+
+  const exitPresentationMode = async () => {
+    setIsPresentationMode(false);
+    if (document.fullscreenElement && document.exitFullscreen) {
+      await document.exitFullscreen();
+    }
+  };
+
   return (
-    <main className="appShell">
+    <main
+      className={`appShell ${isPresentationMode ? 'presentationMode' : ''}`}
+      onClick={isPresentationMode ? exitPresentationMode : undefined}
+    >
       <audio
         ref={audioRef}
         onTimeUpdate={handleTimeUpdate}
@@ -554,6 +585,9 @@ function App() {
 
         <div className="uploadGroup">
           <input ref={fileInputRef} className="hiddenInput" type="file" accept="audio/*" multiple onChange={handleFiles} />
+          <button className="iconButton" type="button" onClick={enterPresentationMode} aria-label="Enter fullscreen visualizer">
+            <Maximize2 size={18} />
+          </button>
           <button className="primaryButton" type="button" onClick={() => fileInputRef.current?.click()}>
             <Upload size={18} />
             Upload

@@ -188,6 +188,24 @@ h2 {
   display: none;
 }
 
+.uploadGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.presentationMode {
+  padding: 0;
+  cursor: pointer;
+}
+
+.presentationMode .topBar,
+.presentationMode .controlDeck,
+.presentationMode .sidePanel,
+.presentationMode .themePanel {
+  display: none;
+}
+
 .sidePanel,
 .themePanel {
   grid-row: 2 / 4;
