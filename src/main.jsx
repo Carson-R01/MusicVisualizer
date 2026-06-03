@@ -184,25 +184,15 @@ function Visualizer({ audioRef, analyserRef, theme, mode, isPlaying }) {
       ctx.setTransform(renderer.getPixelRatio(), 0, 0, renderer.getPixelRatio(), 0, 0);
     };
 
-    const drawCanvas = (freqs, average, colors) => {
-      const rect = overlay.getBoundingClientRect();
-      const width = rect.width;
-      const height = rect.height;
-      ctx.clearRect(0, 0, width, height);
-      ctx.globalCompositeOperation = 'lighter';
-
-      const centerX = width / 2;
-      const centerY = height / 2;
-      const maxRadius = Math.min(width, height) * 0.42;
-      const points = modeRef.current === 'tunnel' ? 80 : 128;
-
+    const drawBarsCanvas = (freqs, average, colors, width, height, centerX, centerY, maxRadius) => {
+      const points = 128;
       for (let layer = 0; layer < 3; layer += 1) {
         ctx.beginPath();
         for (let i = 0; i <= points; i += 1) {
           const value = freqs[i % freqs.length] / 255;
           const angle = (i / points) * Math.PI * 2;
-          const radius = maxRadius * (0.32 + layer * 0.2) + value * (42 + layer * 18);
-          const wobble = Math.sin(performance.now() / 700 + i * 0.18 + layer) * (8 + average * 18);
+          const radius = maxRadius * (0.3 + layer * 0.18) + value * (46 + layer * 20);
+          const wobble = Math.sin(performance.now() / 700 + i * 0.18 + layer) * (7 + average * 15);
           const x = centerX + Math.cos(angle) * (radius + wobble);
           const y = centerY + Math.sin(angle) * (radius + wobble);
           if (i === 0) ctx.moveTo(x, y);
@@ -215,13 +205,68 @@ function Visualizer({ audioRef, analyserRef, theme, mode, isPlaying }) {
         ctx.stroke();
       }
 
-      ctx.globalAlpha = 0.14 + average * 0.2;
+      ctx.globalAlpha = 0.14 + average * 0.22;
       ctx.fillStyle = colors.primary;
-      for (let i = 0; i < 48; i += 1) {
+      for (let i = 0; i < 56; i += 1) {
         const value = freqs[(i * 3) % freqs.length] / 255;
-        const x = (i / 48) * width;
-        const h = value * height * 0.28;
-        ctx.fillRect(x, height - h, Math.max(3, width / 110), h);
+        const x = (i / 56) * width;
+        const h = value * height * 0.3;
+        ctx.fillRect(x, height - h, Math.max(3, width / 120), h);
+      }
+    };
+
+    const drawTunnelCanvas = (freqs, average, colors, width, height, centerX, centerY, maxRadius) => {
+      const time = performance.now();
+      const points = 160;
+
+      for (let ribbon = 0; ribbon < 5; ribbon += 1) {
+        ctx.beginPath();
+        for (let i = 0; i <= points; i += 1) {
+          const value = freqs[(i + ribbon * 13) % freqs.length] / 255;
+          const angle = (i / points) * Math.PI * 2 + time / 3600 + ribbon * 0.28;
+          const baseRadius = maxRadius * (0.2 + ribbon * 0.13);
+          const wave = Math.sin(i * 0.09 + time / 520 + ribbon) * (14 + average * 24);
+          const pulse = value * (22 + ribbon * 8);
+          const x = centerX + Math.cos(angle) * (baseRadius + wave + pulse);
+          const y = centerY + Math.sin(angle) * (baseRadius + wave + pulse);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = ribbon % 3 === 0 ? colors.accent : ribbon % 3 === 1 ? colors.primary : colors.secondary;
+        ctx.lineWidth = 1.4 + ribbon * 0.45 + average * 3.5;
+        ctx.globalAlpha = 0.12 + ribbon * 0.055 + average * 0.22;
+        ctx.stroke();
+      }
+
+      ctx.globalAlpha = 0.16 + average * 0.28;
+      ctx.lineWidth = 1.2;
+      for (let i = 0; i < 28; i += 1) {
+        const value = freqs[(i * 5) % freqs.length] / 255;
+        const angle = (i / 28) * Math.PI * 2 - time / 4200;
+        const inner = maxRadius * (0.18 + value * 0.12);
+        const outer = maxRadius * (0.72 + value * 0.18);
+        ctx.strokeStyle = i % 2 === 0 ? colors.primary : colors.secondary;
+        ctx.beginPath();
+        ctx.moveTo(centerX + Math.cos(angle) * inner, centerY + Math.sin(angle) * inner);
+        ctx.lineTo(centerX + Math.cos(angle) * outer, centerY + Math.sin(angle) * outer);
+        ctx.stroke();
+      }
+    };
+
+    const drawCanvas = (freqs, average, colors) => {
+      const rect = overlay.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+      ctx.clearRect(0, 0, width, height);
+      ctx.globalCompositeOperation = 'lighter';
+
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const maxRadius = Math.min(width, height) * 0.42;
+      if (modeRef.current === 'tunnel') {
+        drawTunnelCanvas(freqs, average, colors, width, height, centerX, centerY, maxRadius);
+      } else {
+        drawBarsCanvas(freqs, average, colors, width, height, centerX, centerY, maxRadius);
       }
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
@@ -245,30 +290,48 @@ function Visualizer({ audioRef, analyserRef, theme, mode, isPlaying }) {
       }
 
       const colors = themeRef.current;
+      const isTunnel = modeRef.current === 'tunnel';
       let sum = 0;
       for (let i = 0; i < data.length; i += 1) sum += data[i];
       const average = sum / data.length / 255;
-      group.rotation.z += 0.003 + average * 0.014;
-      group.rotation.x = Math.sin(performance.now() / 2600) * 0.12;
-      particles.rotation.z -= 0.0015 + average * 0.004;
+      group.rotation.z += isTunnel ? 0.006 + average * 0.009 : 0.003 + average * 0.014;
+      group.rotation.x = isTunnel ? Math.sin(performance.now() / 3000) * 0.22 : Math.sin(performance.now() / 2600) * 0.12;
+      particles.rotation.z -= isTunnel ? 0.0025 + average * 0.006 : 0.0015 + average * 0.004;
+      particles.position.z = isTunnel ? -2 + Math.sin(performance.now() / 1200) * (0.8 + average * 1.8) : 0;
       particles.material.color.set(colors.secondary);
-      particles.material.size = 0.06 + average * 0.12;
+      particles.material.size = isTunnel ? 0.11 + average * 0.22 : 0.06 + average * 0.12;
 
       bars.forEach((bar, index) => {
         const value = data[index % data.length] / 255;
-        const scale = 0.8 + value * (modeRef.current === 'bars' ? 9 : 5);
-        bar.scale.y = scale;
-        bar.position.z = value * 3;
+        const angle = (index / bars.length) * Math.PI * 2;
+        if (isTunnel) {
+          const orbit = angle + performance.now() / 2600;
+          const lane = index % 3;
+          const radius = 5.5 + lane * 1.45 + value * 2.8;
+          const z = Math.sin(performance.now() / 720 + index * 0.18) * (2.4 + average * 4);
+          bar.position.set(Math.cos(orbit) * radius, Math.sin(orbit) * radius, z);
+          bar.rotation.z = orbit + Math.PI / 2;
+          bar.rotation.x = Math.sin(performance.now() / 1100 + index) * 0.35;
+          bar.scale.set(0.6 + value * 0.9, 0.8 + value * 4.6, 0.75);
+        } else {
+          bar.position.set(Math.cos(angle) * 9, Math.sin(angle) * 9, value * 3);
+          bar.rotation.z = angle;
+          bar.rotation.x = 0;
+          bar.scale.set(1, 0.8 + value * 9, 1);
+        }
         bar.material.color.set(index % 3 === 0 ? colors.primary : index % 3 === 1 ? colors.secondary : colors.accent);
         bar.material.emissive.set(bar.material.color);
-        bar.material.emissiveIntensity = 0.18 + value * 0.95;
+        bar.material.emissiveIntensity = 0.18 + value * (isTunnel ? 1.45 : 0.95);
       });
 
       rings.forEach((ring, index) => {
         ring.material.color.set(index === 0 ? colors.accent : index === 1 ? colors.primary : colors.secondary);
-        ring.material.opacity = 0.18 + average * 0.54;
-        ring.rotation.z -= 0.004 + index * 0.002 + average * 0.01;
-        ring.scale.setScalar(0.9 + index * 0.26 + average * 0.38);
+        ring.material.opacity = isTunnel ? 0.2 + average * 0.46 : 0.18 + average * 0.54;
+        ring.rotation.z -= (isTunnel ? 0.006 : 0.004) + index * 0.002 + average * 0.01;
+        ring.rotation.x = isTunnel ? index * 0.18 : index * 0.7;
+        ring.rotation.y = isTunnel ? Math.sin(performance.now() / 1800 + index) * 0.32 : index * 0.4;
+        ring.position.z = isTunnel ? -index * 1.2 + Math.sin(performance.now() / 900 + index) * 1.4 : 0;
+        ring.scale.setScalar(isTunnel ? 0.74 + index * 0.2 + average * 0.42 : 0.9 + index * 0.26 + average * 0.38);
       });
 
       renderer.render(scene, camera);
