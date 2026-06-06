@@ -10,11 +10,12 @@
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
-    "vite": "latest",
+    "lamejs": "^1.2.1",
+    "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest",
     "three": "latest",
-    "lucide-react": "latest"
-  },
-  "devDependencies": {}
+    "tone": "^15.1.22",
+    "vite": "latest"
+  }
 }

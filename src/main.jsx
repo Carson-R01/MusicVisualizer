@@ -4,11 +4,16 @@ import {
   AudioLines,
   CirclePause,
   CirclePlay,
+  Download,
+  Drum,
+  Grid3X3,
   ListMusic,
   Maximize2,
   Music,
   Palette,
   Plus,
+  RotateCcw,
+  SlidersHorizontal,
   SkipBack,
   SkipForward,
   Sparkles,
@@ -17,6 +22,8 @@ import {
   Volume2,
 } from 'lucide-react';
 import * as THREE from 'three';
+import * as Tone from 'tone';
+import lameAllSource from 'lamejs/lame.all.js?raw';
 import './styles.css';
 
 const themes = [
@@ -79,6 +86,738 @@ function makeSampleTrack() {
     artist: 'Generated tone',
     source: 'demo',
   };
+}
+
+const stepCount = 16;
+
+const instrumentLibrary = [
+  { id: 'kick', name: 'Kick', color: '#ff6b35', defaultVolume: 0.9, pattern: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0] },
+  { id: 'snare', name: 'Snare', color: '#ffd166', defaultVolume: 0.72, pattern: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0] },
+  { id: 'clap', name: 'Clap', color: '#ff4f9a', defaultVolume: 0.62, pattern: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0] },
+  { id: 'hat', name: 'Hat', color: '#52f7d2', defaultVolume: 0.46, pattern: [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0] },
+  { id: 'bass', name: 'Bass', color: '#70d6ff', defaultVolume: 0.66, pattern: [1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0] },
+  { id: 'lead', name: 'Lead', color: '#c9f31d', defaultVolume: 0.48, pattern: [0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0] },
+  { id: 'guitar', name: 'Guitar', color: '#b892ff', defaultVolume: 0.58, pattern: [1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0] },
+];
+
+const pianoRollNotes = {
+  kick: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
+  snare: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
+  clap: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
+  hat: ['C6', 'A#5', 'G5', 'F5', 'D#5', 'C5', 'A#4', 'G4'],
+  bass: ['C2', 'A#1', 'G1', 'F1', 'D#1', 'C1'],
+  lead: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
+  guitar: ['C4', 'A#3', 'G3', 'F3', 'D#3', 'C3', 'A#2', 'G2', 'F2'],
+};
+
+const noteLengthOptions = [0.5, 1, 1.5, 2, 4];
+const clampNoteLength = (length) => Math.max(0.5, Math.min(4, Math.round(length * 2) / 2));
+const getNoteDurationSeconds = (note, stepDuration) => clampNoteLength(note.length || 1) * stepDuration;
+const getNotePitch = (note) => (typeof note === 'string' ? note : note.pitch);
+const createNoteEvent = (pitch, length = 1) => ({ pitch, length });
+
+const getInstrument = (instrumentId) => instrumentLibrary.find((instrument) => instrument.id === instrumentId) || instrumentLibrary[0];
+const isMelodicInstrument = (instrumentId) => Boolean(pianoRollNotes[instrumentId]);
+const createDefaultNoteGrid = (instrumentId, pattern) => {
+  const notes = pianoRollNotes[instrumentId] || [];
+  return Array.from({ length: stepCount }, (_, step) => {
+    if (!pattern[step] || !isMelodicInstrument(instrumentId)) return [];
+    if (instrumentId === 'guitar') {
+      return (step % 8 === 0 ? ['C3', 'D#3', 'G3'] : ['F2', 'G#2', 'C3']).map((note) => createNoteEvent(note, 2));
+    }
+    return [notes[step % Math.max(1, notes.length)]].filter(Boolean).map((note) => createNoteEvent(note, instrumentId === 'bass' ? 2 : 1));
+  });
+};
+
+const createTrack = (instrumentId, index = 0) => {
+  const instrument = getInstrument(instrumentId);
+  return {
+    id: `${instrument.id}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    instrumentId: instrument.id,
+    name: `${instrument.name} ${index + 1}`,
+    pattern: [...instrument.pattern],
+    notes: createDefaultNoteGrid(instrument.id, instrument.pattern),
+    muted: false,
+    volume: instrument.defaultVolume,
+  };
+};
+
+const createDefaultTracks = () => ['kick', 'snare', 'hat', 'bass', 'guitar'].map((instrumentId, index) => createTrack(instrumentId, index));
+
+function createBeatInstruments() {
+  const limiter = new Tone.Limiter(-1).toDestination();
+  const compressor = new Tone.Compressor(-18, 3).connect(limiter);
+
+  return {
+    output: compressor,
+    limiter,
+    kick: new Tone.MembraneSynth({
+      pitchDecay: 0.045,
+      octaves: 7,
+      envelope: { attack: 0.001, decay: 0.32, sustain: 0.02, release: 0.55 },
+    }).connect(compressor),
+    snare: new Tone.NoiseSynth({
+      noise: { type: 'white' },
+      envelope: { attack: 0.001, decay: 0.16, sustain: 0 },
+    }).connect(compressor),
+    clap: new Tone.NoiseSynth({
+      noise: { type: 'pink' },
+      envelope: { attack: 0.004, decay: 0.22, sustain: 0 },
+    }).connect(compressor),
+    hat: new Tone.NoiseSynth({
+      noise: { type: 'white' },
+      envelope: { attack: 0.001, decay: 0.045, sustain: 0, release: 0.015 },
+    }).connect(compressor),
+    bass: new Tone.MonoSynth({
+      oscillator: { type: 'square' },
+      filter: { Q: 1, type: 'lowpass', rolloff: -24 },
+      envelope: { attack: 0.01, decay: 0.16, sustain: 0.18, release: 0.12 },
+      filterEnvelope: { attack: 0.01, decay: 0.18, sustain: 0.25, release: 0.1, baseFrequency: 80, octaves: 2.2 },
+    }).connect(compressor),
+    lead: new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'triangle' },
+      envelope: { attack: 0.004, decay: 0.12, sustain: 0.2, release: 0.18 },
+    }).connect(compressor),
+    guitar: new Tone.PluckSynth({
+      attackNoise: 0.7,
+      dampening: 3400,
+      resonance: 0.82,
+    }).connect(compressor),
+  };
+}
+
+function triggerBeatSound(instruments, track, step, time, stepDuration) {
+  const velocity = track.volume;
+  const stepNotes = track.notes[step] || [];
+  if (track.instrumentId === 'kick') {
+    stepNotes.forEach((note, index) => instruments.kick.triggerAttackRelease(getNotePitch(note), getNoteDurationSeconds(note, stepDuration), time + index * 0.002, velocity));
+  }
+  if (track.instrumentId === 'snare' && stepNotes.length) instruments.snare.triggerAttackRelease('16n', time, velocity);
+  if (track.instrumentId === 'clap' && stepNotes.length) instruments.clap.triggerAttackRelease('16n', time, velocity * 0.8);
+  if (track.instrumentId === 'hat' && stepNotes.length) instruments.hat.triggerAttackRelease('32n', time, velocity * 0.58);
+  if (track.instrumentId === 'bass') {
+    const bassNote = stepNotes[0];
+    if (bassNote) instruments.bass.triggerAttackRelease(getNotePitch(bassNote), getNoteDurationSeconds(bassNote, stepDuration), time, velocity * 0.82);
+  }
+  if (track.instrumentId === 'lead') {
+    stepNotes.forEach((note, index) => {
+      instruments.lead.triggerAttackRelease(getNotePitch(note), getNoteDurationSeconds(note, stepDuration), time + index * 0.001, velocity * 0.55);
+    });
+  }
+  if (track.instrumentId === 'guitar') {
+    stepNotes.forEach((note, index) => {
+      instruments.guitar.triggerAttack(getNotePitch(note), time + index * 0.015, velocity * 0.64);
+    });
+  }
+}
+
+const downloadBlob = (blob, filename) => {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+};
+
+const audioBufferToWavBlob = (audioBuffer) => {
+  const channelCount = audioBuffer.numberOfChannels;
+  const sampleRate = audioBuffer.sampleRate;
+  const frameCount = audioBuffer.length;
+  const bytesPerSample = 2;
+  const blockAlign = channelCount * bytesPerSample;
+  const buffer = new ArrayBuffer(44 + frameCount * blockAlign);
+  const view = new DataView(buffer);
+
+  const writeString = (offset, value) => {
+    for (let i = 0; i < value.length; i += 1) {
+      view.setUint8(offset + i, value.charCodeAt(i));
+    }
+  };
+
+  writeString(0, 'RIFF');
+  view.setUint32(4, 36 + frameCount * blockAlign, true);
+  writeString(8, 'WAVE');
+  writeString(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, channelCount, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * blockAlign, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, 16, true);
+  writeString(36, 'data');
+  view.setUint32(40, frameCount * blockAlign, true);
+
+  let offset = 44;
+  for (let frame = 0; frame < frameCount; frame += 1) {
+    for (let channel = 0; channel < channelCount; channel += 1) {
+      const sample = Math.max(-1, Math.min(1, audioBuffer.getChannelData(channel)[frame]));
+      view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+      offset += bytesPerSample;
+    }
+  }
+
+  return new Blob([view], { type: 'audio/wav' });
+};
+
+const floatToInt16 = (samples) => {
+  const output = new Int16Array(samples.length);
+  for (let i = 0; i < samples.length; i += 1) {
+    const sample = Math.max(-1, Math.min(1, samples[i]));
+    output[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+  }
+  return output;
+};
+
+let cachedMp3Encoder = null;
+
+const getMp3Encoder = () => {
+  if (!cachedMp3Encoder) {
+    const module = { exports: {} };
+    const exports = module.exports;
+    const loadEncoder = new Function('module', 'exports', `${lameAllSource}; module.exports = lamejs;`);
+    loadEncoder(module, exports);
+    cachedMp3Encoder = module.exports.Mp3Encoder;
+  }
+  return cachedMp3Encoder;
+};
+
+const audioBufferToMp3Blob = (audioBuffer) => {
+  const left = floatToInt16(audioBuffer.getChannelData(0));
+  const right = floatToInt16(audioBuffer.getChannelData(Math.min(1, audioBuffer.numberOfChannels - 1)));
+  const Mp3Encoder = getMp3Encoder();
+  const encoder = new Mp3Encoder(2, audioBuffer.sampleRate, 192);
+  const chunks = [];
+  const sampleBlockSize = 1152;
+
+  for (let i = 0; i < left.length; i += sampleBlockSize) {
+    const leftChunk = left.subarray(i, i + sampleBlockSize);
+    const rightChunk = right.subarray(i, i + sampleBlockSize);
+    const encoded = encoder.encodeBuffer(leftChunk, rightChunk);
+    if (encoded.length) chunks.push(encoded);
+  }
+
+  const flushed = encoder.flush();
+  if (flushed.length) chunks.push(flushed);
+  return new Blob(chunks, { type: 'audio/mpeg' });
+};
+
+const renderBeatOffline = async (tracks, bpm) => {
+  const stepDuration = 60 / bpm / 4;
+  const repetitions = 4;
+  const patternDuration = stepDuration * stepCount;
+  const renderDuration = patternDuration * repetitions + 1.2;
+
+  return Tone.Offline(() => {
+    const instruments = createBeatInstruments();
+    for (let repeat = 0; repeat < repetitions; repeat += 1) {
+      for (let step = 0; step < stepCount; step += 1) {
+        const time = repeat * patternDuration + step * stepDuration;
+        tracks.forEach((track, trackIndex) => {
+          if (track.pattern[step] && !track.muted) {
+            triggerBeatSound(instruments, track, step, time + trackIndex * 0.001, stepDuration);
+          }
+        });
+      }
+    }
+  }, renderDuration);
+};
+
+function BeatMaker({ onBack }) {
+  const [tracks, setTracks] = useState(createDefaultTracks);
+  const [bpm, setBpm] = useState(128);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentStep, setCurrentStep] = useState(-1);
+  const [isDropActive, setIsDropActive] = useState(false);
+  const [selectedTrackId, setSelectedTrackId] = useState(null);
+  const [exportStatus, setExportStatus] = useState('');
+  const tracksRef = useRef(tracks);
+  const instrumentsRef = useRef(null);
+  const sequenceRef = useRef(null);
+  const stepRef = useRef(0);
+
+  useEffect(() => {
+    tracksRef.current = tracks;
+    if (!selectedTrackId && tracks.length) setSelectedTrackId(tracks[0].id);
+    if (selectedTrackId && !tracks.some((track) => track.id === selectedTrackId)) {
+      setSelectedTrackId(tracks[0]?.id || null);
+    }
+  }, [selectedTrackId, tracks]);
+
+  useEffect(() => {
+    Tone.Transport.bpm.value = bpm;
+  }, [bpm]);
+
+  useEffect(() => () => {
+    Tone.Transport.stop();
+    if (sequenceRef.current) Tone.Transport.clear(sequenceRef.current);
+    if (instrumentsRef.current) {
+      Object.values(instrumentsRef.current).forEach((node) => node.dispose?.());
+    }
+  }, []);
+
+  const ensureBeatEngine = async () => {
+    await Tone.start();
+    Tone.Transport.bpm.value = bpm;
+    if (!instrumentsRef.current) instrumentsRef.current = createBeatInstruments();
+    if (!sequenceRef.current) {
+      sequenceRef.current = Tone.Transport.scheduleRepeat((time) => {
+        const step = stepRef.current;
+        const stepDuration = 60 / Tone.Transport.bpm.value / 4;
+        tracksRef.current.forEach((track, trackIndex) => {
+          if (track.pattern[step] && !track.muted) {
+            triggerBeatSound(instrumentsRef.current, track, step, time + trackIndex * 0.001, stepDuration);
+          }
+        });
+        Tone.Draw.schedule(() => setCurrentStep(step), time);
+        stepRef.current = (step + 1) % stepCount;
+      }, '16n');
+    }
+  };
+
+  const addTrack = (instrumentId) => {
+    const newTrack = createTrack(instrumentId, tracksRef.current.length);
+    setTracks((current) => [...current, newTrack]);
+    setSelectedTrackId(newTrack.id);
+  };
+
+  const handleDropInstrument = (event) => {
+    event.preventDefault();
+    const instrumentId = event.dataTransfer.getData('instrument-id');
+    if (instrumentId) addTrack(instrumentId);
+    setIsDropActive(false);
+  };
+
+  const toggleStep = (trackId, step) => {
+    setTracks((current) => current.map((track) => (
+      track.id === trackId
+        ? {
+            ...track,
+            pattern: track.pattern.map((value, index) => (index === step ? Number(!value) : value)),
+            notes: isMelodicInstrument(track.instrumentId)
+              ? track.notes.map((notes, index) => {
+                  if (index !== step) return notes;
+                  if (notes.length) return [];
+                  return [pianoRollNotes[track.instrumentId]?.[0]].filter(Boolean).map((pitch) => createNoteEvent(pitch));
+                })
+              : track.notes,
+          }
+        : track
+    )));
+  };
+
+  const togglePianoNote = (trackId, step, note) => {
+    setTracks((current) => current.map((track) => (
+      track.id === trackId
+        ? {
+            ...track,
+            notes: track.notes.map((notes, index) => {
+              if (index !== step) return notes;
+              return notes.some((item) => getNotePitch(item) === note)
+                ? notes.filter((item) => getNotePitch(item) !== note)
+                : [...notes, createNoteEvent(note)];
+            }),
+            pattern: track.pattern.map((value, index) => {
+              if (index !== step) return value;
+              const nextNotes = track.notes[step].some((item) => getNotePitch(item) === note)
+                ? track.notes[step].filter((item) => getNotePitch(item) !== note)
+                : [...track.notes[step], createNoteEvent(note)];
+              return Number(nextNotes.length > 0);
+            }),
+          }
+        : track
+    )));
+  };
+
+  const setNoteLength = (trackId, step, pitch, length) => {
+    setTracks((current) => current.map((track) => (
+      track.id === trackId
+        ? {
+            ...track,
+            notes: track.notes.map((notes, index) => {
+              if (index !== step) return notes;
+              return notes.map((note) => {
+                if (getNotePitch(note) !== pitch) return note;
+                return { ...note, length: clampNoteLength(length) };
+              });
+            }),
+          }
+        : track
+    )));
+  };
+
+  const startNoteResize = (event, trackId, step, pitch, currentLength) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const cell = event.currentTarget.closest('.pianoCell');
+    const cellWidth = cell?.getBoundingClientRect().width || 1;
+    const startX = event.clientX;
+    const initialLength = currentLength || 1;
+
+    const handlePointerMove = (moveEvent) => {
+      const deltaSteps = (moveEvent.clientX - startX) / cellWidth;
+      setNoteLength(trackId, step, pitch, initialLength + deltaSteps);
+    };
+
+    const handlePointerUp = () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+  };
+
+  const togglePlayback = async () => {
+    if (isPlaying) {
+      Tone.Transport.stop();
+      setIsPlaying(false);
+      setCurrentStep(-1);
+      stepRef.current = 0;
+      return;
+    }
+    await ensureBeatEngine();
+    Tone.Transport.start();
+    setIsPlaying(true);
+  };
+
+  const exportBeat = async (format) => {
+    setExportStatus(`Rendering ${format.toUpperCase()}...`);
+    try {
+      await Tone.start();
+      const rendered = await renderBeatOffline(tracksRef.current, bpm);
+      const blob = format === 'mp3' ? audioBufferToMp3Blob(rendered) : audioBufferToWavBlob(rendered);
+      downloadBlob(blob, `beat-maker-loop.${format}`);
+      setExportStatus(`Downloaded ${format.toUpperCase()}`);
+      window.setTimeout(() => setExportStatus(''), 1800);
+    } catch (error) {
+      console.error(error);
+      setExportStatus('Export failed');
+    }
+  };
+
+  const clearPattern = () => {
+    setTracks((current) => current.map((track) => ({
+      ...track,
+      pattern: Array(stepCount).fill(0),
+      notes: Array.from({ length: stepCount }, () => []),
+    })));
+  };
+
+  const resetPattern = () => {
+    const defaultTracks = createDefaultTracks();
+    setTracks(defaultTracks);
+    setSelectedTrackId(defaultTracks[0]?.id || null);
+  };
+
+  const updateTrack = (trackId, updater) => {
+    setTracks((current) => current.map((track) => (
+      track.id === trackId ? updater(track) : track
+    )));
+  };
+
+  const selectedTrack = tracks.find((track) => track.id === selectedTrackId) || tracks[0];
+  const selectedInstrument = selectedTrack ? getInstrument(selectedTrack.instrumentId) : null;
+
+  return (
+    <main className="beatMakerShell">
+      <section className="beatTopbar">
+        <div className="beatBrand">
+          <div className="beatLogo"><Drum size={22} /></div>
+          <div>
+            <h1>Beat Maker</h1>
+            <p>Channel rack sequencer</p>
+          </div>
+        </div>
+        <div className="beatActions">
+          <button type="button" className="beatGhostButton" onClick={onBack}>
+            <AudioLines size={18} />
+            Visualizer
+          </button>
+          <button type="button" className="beatGhostButton" onClick={() => exportBeat('wav')} disabled={Boolean(exportStatus)}>
+            <Download size={18} />
+            WAV
+          </button>
+          <button type="button" className="beatGhostButton" onClick={() => exportBeat('mp3')} disabled={Boolean(exportStatus)}>
+            <Download size={18} />
+            MP3
+          </button>
+          <button type="button" className="beatPrimaryButton" onClick={togglePlayback}>
+            {isPlaying ? <CirclePause size={20} /> : <CirclePlay size={20} />}
+            {isPlaying ? 'Stop' : 'Play'}
+          </button>
+        </div>
+      </section>
+
+      <section className="beatTransportPanel">
+        <div className="transportBlock">
+          <Grid3X3 size={18} />
+          <span>{tracks.length} tracks</span>
+        </div>
+        <label className="bpmControl">
+          <span>BPM</span>
+          <input
+            type="number"
+            min="60"
+            max="190"
+            value={bpm}
+            onChange={(event) => setBpm(Math.max(60, Math.min(190, Number(event.target.value) || 120)))}
+          />
+        </label>
+        <input
+          className="bpmSlider"
+          type="range"
+          min="60"
+          max="190"
+          value={bpm}
+          onChange={(event) => setBpm(Number(event.target.value))}
+          aria-label="BPM"
+        />
+        <button type="button" className="beatIconTextButton" onClick={resetPattern}>
+          <RotateCcw size={17} />
+          Reset
+        </button>
+        <button type="button" className="beatIconTextButton" onClick={clearPattern}>
+          <Trash2 size={17} />
+          Clear
+        </button>
+        <span className="exportStatus">{exportStatus}</span>
+      </section>
+
+      <section className="instrumentBrowser">
+        <div className="browserHeader">
+          <Plus size={18} />
+          <h2>Instruments</h2>
+        </div>
+        <div className="instrumentList">
+          {instrumentLibrary.map((instrument) => (
+            <button
+              key={instrument.id}
+              type="button"
+              className="instrumentTile"
+              draggable
+              onDragStart={(event) => event.dataTransfer.setData('instrument-id', instrument.id)}
+              onClick={() => addTrack(instrument.id)}
+            >
+              <span style={{ background: instrument.color }} />
+              <strong>{instrument.name}</strong>
+              <small>Open piano roll</small>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section
+        className={`trackEditor ${isDropActive ? 'dropActive' : ''}`}
+        onDragOver={(event) => {
+          event.preventDefault();
+          setIsDropActive(true);
+        }}
+        onDragLeave={() => setIsDropActive(false)}
+        onDrop={handleDropInstrument}
+      >
+        {selectedTrack && selectedInstrument ? (
+          <>
+            <div className="trackEditorHeader">
+              <div className="editorTitle">
+                <span style={{ background: selectedInstrument.color }} />
+                <div>
+                  <h2>{selectedTrack.name}</h2>
+                  <p>{selectedInstrument.name} pattern</p>
+                </div>
+              </div>
+              <div className="editorMix">
+                <label>
+                  <Volume2 size={16} />
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={selectedTrack.volume}
+                    onChange={(event) => updateTrack(selectedTrack.id, (track) => ({ ...track, volume: Number(event.target.value) }))}
+                    aria-label={`${selectedTrack.name} volume`}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className={selectedTrack.muted ? 'muted' : ''}
+                  onClick={() => updateTrack(selectedTrack.id, (track) => ({ ...track, muted: !track.muted }))}
+                >
+                  {selectedTrack.muted ? 'Muted' : 'On'}
+                </button>
+              </div>
+            </div>
+            <div className="pianoRollFrame">
+              <div className="pianoRoll">
+                <div className="pianoRollHeader">
+                  <div />
+                  {Array.from({ length: stepCount }, (_, step) => (
+                    <span key={step} className={currentStep === step ? 'playingStep' : ''}>{step + 1}</span>
+                  ))}
+                </div>
+                {(pianoRollNotes[selectedTrack.instrumentId] || []).map((note) => (
+                  <div className="pianoRollRow" key={note}>
+                    <div className={`pianoKey ${note.includes('#') ? 'black' : ''}`}>{note}</div>
+                    {Array.from({ length: stepCount }, (_, step) => {
+                      const noteEvent = selectedTrack.notes[step]?.find((item) => getNotePitch(item) === note);
+                      const active = Boolean(noteEvent);
+                      const noteLength = noteEvent?.length || 1;
+                      return (
+                        <button
+                          key={step}
+                          type="button"
+                          className={`pianoCell ${active ? 'active' : ''} ${currentStep === step ? 'current' : ''}`}
+                          style={active ? { '--step-color': selectedInstrument.color, '--note-span': noteLength } : undefined}
+                          onClick={(event) => {
+                            if (event.target.closest('.noteResizeHandle')) return;
+                            togglePianoNote(selectedTrack.id, step, note);
+                          }}
+                          aria-label={`${selectedTrack.name} ${note} step ${step + 1}`}
+                        >
+                          {active ? (
+                            <span>
+                              {note}
+                              <i
+                                role="button"
+                                tabIndex={0}
+                                className="noteResizeHandle"
+                                onPointerDown={(event) => startNoteResize(event, selectedTrack.id, step, note, noteLength)}
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                }}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    setNoteLength(
+                                      selectedTrack.id,
+                                      step,
+                                      note,
+                                      noteLength + (event.key === 'ArrowRight' ? 0.5 : -0.5),
+                                    );
+                                  }
+                                }}
+                                aria-label={`Resize ${note} length`}
+                              />
+                            </span>
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="emptyTrackEditor">
+            <Drum size={24} />
+            <span>Drop an instrument here</span>
+          </div>
+        )}
+      </section>
+
+      <section
+        className={`channelRack ${isDropActive ? 'dropActive' : ''}`}
+        onDragOver={(event) => {
+          event.preventDefault();
+          setIsDropActive(true);
+        }}
+        onDragLeave={() => setIsDropActive(false)}
+        onDrop={handleDropInstrument}
+      >
+        <div className="rackHeader">
+          <div>Playlist rack</div>
+          {Array.from({ length: stepCount }, (_, step) => (
+            <span key={step} className={currentStep === step ? 'playingStep' : ''}>{step + 1}</span>
+          ))}
+        </div>
+        {tracks.map((track) => {
+          const instrument = getInstrument(track.instrumentId);
+          return (
+          <div
+            className={`channelRow ${selectedTrackId === track.id ? 'selected' : ''}`}
+            key={track.id}
+            onClick={() => setSelectedTrackId(track.id)}
+          >
+            <div className="channelName">
+              <span style={{ background: instrument.color }} />
+              <input
+                value={track.name}
+                onChange={(event) => setTracks((current) => current.map((item) => (
+                  item.id === track.id ? { ...item, name: event.target.value } : item
+                )))}
+                onClick={(event) => event.stopPropagation()}
+                aria-label={`${track.name} name`}
+              />
+            </div>
+            {Array.from({ length: stepCount }, (_, step) => (
+              <button
+                key={step}
+                type="button"
+                className={`stepPad ${(isMelodicInstrument(track.instrumentId) ? track.notes[step]?.length : track.pattern[step]) ? 'active' : ''} ${currentStep === step ? 'current' : ''}`}
+                style={(isMelodicInstrument(track.instrumentId) ? track.notes[step]?.length : track.pattern[step]) ? { '--step-color': instrument.color } : undefined}
+                onClick={() => toggleStep(track.id, step)}
+                aria-label={`${track.name} step ${step + 1}`}
+              />
+            ))}
+          </div>
+          );
+        })}
+      </section>
+
+      <section className="beatMixer">
+        <div className="mixerHeader">
+          <SlidersHorizontal size={18} />
+          <h2>Mixer</h2>
+        </div>
+        <div className="mixerStrips">
+          {tracks.map((track) => {
+            const instrument = getInstrument(track.instrumentId);
+            return (
+            <div className="mixerStrip" key={track.id}>
+              <span className="stripColor" style={{ background: instrument.color }} />
+              <strong>{track.name}</strong>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={track.volume}
+                onChange={(event) => setTracks((current) => current.map((item) => (
+                  item.id === track.id ? { ...item, volume: Number(event.target.value) } : item
+                )))}
+                aria-label={`${track.name} volume`}
+              />
+              <button
+                type="button"
+                className={track.muted ? 'muted' : ''}
+                onClick={() => setTracks((current) => current.map((item) => (
+                  item.id === track.id ? { ...item, muted: !item.muted } : item
+                )))}
+              >
+                {track.muted ? 'Muted' : 'On'}
+              </button>
+              <button
+                type="button"
+                className="removeTrackButton"
+                onClick={() => setTracks((current) => current.filter((item) => item.id !== track.id))}
+                aria-label={`Remove ${track.name}`}
+              >
+                <Trash2 size={15} />
+              </button>
+            </div>
+            );
+          })}
+        </div>
+      </section>
+    </main>
+  );
 }
 
 function Visualizer({ audioRef, analyserRef, theme, mode, isPlaying }) {
@@ -501,6 +1240,7 @@ function App() {
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
+  const [activeView, setActiveView] = useState('visualizer');
 
   const theme = useMemo(() => themes.find((item) => item.id === themeId) || themes[0], [themeId]);
   const currentTrack = playlist[currentIndex] || playlist[0];
@@ -673,6 +1413,10 @@ function App() {
     }
   };
 
+  if (activeView === 'beatmaker') {
+    return <BeatMaker onBack={() => setActiveView('visualizer')} />;
+  }
+
   return (
     <main
       className={`appShell ${isPresentationMode ? 'presentationMode' : ''}`}
@@ -703,6 +1447,10 @@ function App() {
 
         <div className="uploadGroup">
           <input ref={fileInputRef} className="hiddenInput" type="file" accept="audio/*" multiple onChange={handleFiles} />
+          <button className="beatSwitchButton" type="button" onClick={() => setActiveView('beatmaker')}>
+            <Drum size={18} />
+            Beat Maker
+          </button>
           <button className="iconButton" type="button" onClick={enterPresentationMode} aria-label="Enter fullscreen visualizer">
             <Maximize2 size={18} />
           </button>

@@ -210,6 +210,23 @@ h2 {
   gap: 8px;
 }
 
+.beatSwitchButton {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.07);
+  font-weight: 700;
+}
+
+.beatSwitchButton:hover {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.12);
+}
+
 .presentationMode {
   padding: 0;
   cursor: pointer;
@@ -440,6 +457,681 @@ input[type="range"] {
   min-width: 120px;
 }
 
+.beatMakerShell {
+  min-height: 100vh;
+  max-height: 100vh;
+  padding: 18px;
+  display: grid;
+  grid-template-columns: minmax(190px, 240px) minmax(0, 1fr) minmax(250px, 320px);
+  grid-template-rows: auto auto minmax(360px, 0.95fr) minmax(180px, 0.65fr);
+  gap: 12px;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, rgba(255, 107, 53, 0.07), transparent 32%),
+    linear-gradient(180deg, #15171a, #0b0d10);
+}
+
+.beatTopbar,
+.beatTransportPanel,
+.instrumentBrowser,
+.trackEditor,
+.channelRack,
+.beatMixer {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(22, 25, 29, 0.94);
+  box-shadow: 0 16px 60px rgba(0, 0, 0, 0.38);
+}
+
+.beatTopbar {
+  grid-column: 1 / -1;
+  min-height: 72px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.beatBrand,
+.beatActions,
+.transportBlock,
+.mixerHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.beatLogo {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: #0b0d10;
+  background: #ff9f1c;
+}
+
+.beatBrand h1 {
+  font-size: 1.35rem;
+}
+
+.beatBrand p {
+  color: #9aa3ad;
+}
+
+.beatActions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.beatPrimaryButton,
+.beatGhostButton,
+.beatIconTextButton {
+  min-height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.beatPrimaryButton {
+  color: #12100a;
+  background: #ff9f1c;
+}
+
+.beatGhostButton,
+.beatIconTextButton {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.beatPrimaryButton:hover,
+.beatGhostButton:hover,
+.beatIconTextButton:hover {
+  border-color: #ff9f1c;
+}
+
+.beatPrimaryButton:disabled,
+.beatGhostButton:disabled,
+.beatIconTextButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.beatTransportPanel {
+  grid-column: 1 / -1;
+  min-height: 64px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: auto auto minmax(180px, 1fr) auto auto minmax(120px, auto);
+  gap: 12px;
+  align-items: center;
+}
+
+.exportStatus {
+  color: #8ff5dc;
+  font-size: 0.84rem;
+  font-weight: 800;
+  text-align: right;
+}
+
+.transportBlock {
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: #20242a;
+  color: #ffcf70;
+  font-weight: 800;
+}
+
+.bpmControl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #c9d1d9;
+  font-weight: 800;
+}
+
+.bpmControl input {
+  width: 74px;
+  min-height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  padding: 0 8px;
+  color: #f6f8fb;
+  background: #101318;
+}
+
+.bpmSlider {
+  accent-color: #ff9f1c;
+}
+
+.channelRack {
+  grid-column: 2;
+  grid-row: 4;
+  padding: 12px;
+  overflow: auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+.instrumentBrowser {
+  grid-column: 1;
+  grid-row: 3 / 5;
+  padding: 12px;
+  overflow: auto;
+  min-height: 0;
+}
+
+.trackEditor {
+  grid-column: 2;
+  grid-row: 3;
+  padding: 12px;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.browserHeader {
+  min-height: 34px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.instrumentList {
+  display: grid;
+  gap: 8px;
+}
+
+.instrumentTile {
+  min-height: 66px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 9px;
+  display: grid;
+  grid-template-columns: 10px 1fr;
+  gap: 2px 10px;
+  align-items: center;
+  text-align: left;
+  background: #151a20;
+  cursor: grab;
+}
+
+.instrumentTile:active {
+  cursor: grabbing;
+}
+
+.instrumentTile:hover {
+  border-color: #ff9f1c;
+  background: #1d232b;
+}
+
+.instrumentTile span {
+  grid-row: 1 / 3;
+  width: 10px;
+  height: 100%;
+  min-height: 38px;
+  border-radius: 4px;
+}
+
+.instrumentTile small {
+  color: #8e99a6;
+}
+
+.channelRack.dropActive {
+  border-color: #ff9f1c;
+  box-shadow: 0 0 0 2px rgba(255, 159, 28, 0.22), 0 16px 60px rgba(0, 0, 0, 0.38);
+}
+
+.trackEditor.dropActive {
+  border-color: #ff9f1c;
+  background: rgba(44, 37, 24, 0.96);
+}
+
+.trackEditorHeader {
+  min-height: 44px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.editorTitle,
+.editorMix,
+.editorMix label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.editorTitle span {
+  width: 12px;
+  height: 44px;
+  border-radius: 4px;
+}
+
+.editorTitle h2,
+.editorTitle p {
+  margin: 0;
+}
+
+.editorTitle p {
+  color: #8e99a6;
+  font-size: 0.86rem;
+}
+
+.editorMix {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.editorMix input {
+  width: 150px;
+}
+
+.editorMix button {
+  min-height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.08);
+  font-weight: 800;
+}
+
+.editorMix button.muted {
+  color: #101318;
+  background: #ff4f9a;
+}
+
+.focusedSequencer {
+  display: grid;
+  grid-template-columns: repeat(16, minmax(34px, 1fr));
+  gap: 8px;
+}
+
+.focusedStep {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 6px;
+  display: grid;
+  grid-template-rows: minmax(72px, 1fr) auto;
+  overflow: hidden;
+  color: #8e99a6;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent),
+    #242a31;
+}
+
+.focusedStep:nth-child(4n + 1) {
+  background:
+    linear-gradient(180deg, rgba(255, 159, 28, 0.08), transparent),
+    #303640;
+}
+
+.focusedStep.active {
+  border-color: var(--step-color);
+  color: #101318;
+  box-shadow: 0 0 20px color-mix(in srgb, var(--step-color) 40%, transparent);
+}
+
+.focusedStep.current {
+  outline: 2px solid #f6f8fb;
+  outline-offset: 2px;
+}
+
+.focusedStep button {
+  min-height: 72px;
+  border: 0;
+  padding: 7px 4px;
+  display: grid;
+  align-content: end;
+  justify-items: center;
+  gap: 5px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.focusedStep.active button {
+  background: var(--step-color);
+}
+
+.focusedStep span {
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.focusedStep strong {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+.focusedStep select {
+  width: 100%;
+  min-height: 28px;
+  border: 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 0;
+  padding: 0 4px;
+  color: #f6f8fb;
+  background: #111419;
+  font-size: 0.72rem;
+}
+
+.pianoRollFrame {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: #263640;
+}
+
+.pianoRoll {
+  min-width: 760px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-width: 0 0 1px;
+  background: #263640;
+}
+
+.pianoRollHeader,
+.pianoRollRow {
+  display: grid;
+  grid-template-columns: 76px repeat(16, minmax(40px, 1fr));
+}
+
+.pianoRollHeader {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  min-height: 28px;
+  background: #34444c;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.32);
+}
+
+.pianoRollHeader span {
+  display: grid;
+  place-items: center;
+  border-left: 1px solid rgba(0, 0, 0, 0.28);
+  color: #b9c8ce;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.pianoRollHeader .playingStep {
+  color: #161c1f;
+  background: #e6ce35;
+}
+
+.pianoRollRow {
+  min-height: 36px;
+}
+
+.pianoKey {
+  padding: 0 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.24);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: #243039;
+  background: #cfd5d8;
+  font-size: 0.74rem;
+  font-weight: 900;
+}
+
+.pianoKey.black {
+  color: #cfd5d8;
+  background: #2b3034;
+}
+
+.pianoCell {
+  min-height: 36px;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.035);
+  border-left: 1px solid rgba(0, 0, 0, 0.2);
+  position: relative;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025), transparent),
+    #2b3b44;
+  cursor: pointer;
+}
+
+.pianoCell:nth-child(4n + 2) {
+  background:
+    linear-gradient(90deg, rgba(255, 159, 28, 0.05), transparent),
+    #314650;
+}
+
+.pianoCell.active {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04), transparent),
+    #2b3b44;
+}
+
+.pianoCell.current {
+  box-shadow: inset 2px 0 0 #e6ce35;
+}
+
+.pianoCell span {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 4px;
+  width: max(34px, calc((100% + 1px) * var(--note-span, 1)));
+  max-width: calc((100% + 1px) * 4 - 8px);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding-left: 6px;
+  padding-right: 4px;
+  color: #213028;
+  background: color-mix(in srgb, var(--step-color) 68%, #d2fac9 32%);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.26), inset 0 0 0 1px rgba(255, 255, 255, 0.24);
+  font-size: 0.68rem;
+  font-weight: 900;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.pianoCell span i {
+  width: 5px;
+  min-width: 5px;
+  height: calc(100% - 4px);
+  border-radius: 4px;
+  display: inline-grid;
+  place-items: center;
+  color: transparent;
+  background: rgba(0, 0, 0, 0.42);
+  cursor: ew-resize;
+  font-style: normal;
+  font-size: 0;
+  pointer-events: auto;
+  user-select: none;
+  touch-action: none;
+}
+
+.emptyTrackEditor {
+  min-height: 150px;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  color: #8e99a6;
+}
+
+.rackHeader,
+.channelRow {
+  display: grid;
+  grid-template-columns: minmax(120px, 160px) repeat(16, minmax(24px, 1fr));
+  gap: 6px;
+  align-items: center;
+  min-width: 700px;
+}
+
+.rackHeader {
+  margin-bottom: 10px;
+  color: #8e99a6;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.rackHeader span {
+  min-height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: #111419;
+}
+
+.rackHeader .playingStep {
+  color: #101318;
+  background: #ff9f1c;
+}
+
+.channelRow {
+  min-height: 48px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+}
+
+.channelRow.selected {
+  border-radius: 8px;
+  background: rgba(255, 159, 28, 0.1);
+  box-shadow: inset 3px 0 0 #ff9f1c;
+}
+
+.channelName {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+}
+
+.channelName span {
+  width: 12px;
+  height: 32px;
+  border-radius: 4px;
+  display: block;
+  flex: 0 0 auto;
+}
+
+.channelName input {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 7px 8px;
+  color: #f6f8fb;
+  background: transparent;
+  font-weight: 800;
+}
+
+.channelName input:focus {
+  border-color: rgba(255, 159, 28, 0.55);
+  outline: none;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.stepPad {
+  aspect-ratio: 1 / 1;
+  min-height: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 4px;
+  background: #252a31;
+  cursor: pointer;
+}
+
+.stepPad:nth-child(4n + 2) {
+  background: #303640;
+}
+
+.stepPad.active {
+  border-color: color-mix(in srgb, var(--step-color) 80%, white 0%);
+  background: var(--step-color);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--step-color) 42%, transparent);
+}
+
+.stepPad.current {
+  outline: 2px solid #f6f8fb;
+  outline-offset: 1px;
+}
+
+.beatMixer {
+  grid-column: 3;
+  grid-row: 3 / 5;
+  padding: 12px;
+  overflow: auto;
+  min-height: 0;
+}
+
+.mixerHeader {
+  min-height: 34px;
+  margin-bottom: 12px;
+}
+
+.mixerStrips {
+  display: grid;
+  gap: 10px;
+}
+
+.mixerStrip {
+  min-height: 74px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: 8px minmax(64px, 1fr) minmax(86px, 1fr) 64px 36px;
+  gap: 10px;
+  align-items: center;
+  background: #12161b;
+}
+
+.stripColor {
+  width: 8px;
+  height: 100%;
+  min-height: 42px;
+  border-radius: 4px;
+}
+
+.mixerStrip strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mixerStrip button {
+  min-height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  font-weight: 800;
+}
+
+.mixerStrip button.muted {
+  color: #101318;
+  background: #ff4f9a;
+}
+
+.mixerStrip .removeTrackButton {
+  width: 36px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+
 @media (max-width: 1040px) {
   body {
     overflow: auto;
@@ -469,6 +1161,28 @@ input[type="range"] {
 
   .timeline,
   .volume {
+    grid-column: 1 / -1;
+  }
+
+  .beatMakerShell {
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+
+  .instrumentBrowser,
+  .trackEditor,
+  .channelRack,
+  .beatMixer {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .beatTransportPanel {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .bpmSlider,
+  .beatIconTextButton {
     grid-column: 1 / -1;
   }
 }
@@ -510,5 +1224,51 @@ input[type="range"] {
 
   .trackList {
     max-height: 260px;
+  }
+
+  .beatMakerShell {
+    padding: 10px;
+  }
+
+  .beatTopbar,
+  .beatActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .beatPrimaryButton,
+  .beatGhostButton {
+    width: 100%;
+  }
+
+  .rackHeader,
+  .channelRow {
+    grid-template-columns: 112px repeat(16, 28px);
+  }
+
+  .trackEditorHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .editorMix {
+    justify-content: stretch;
+  }
+
+  .editorMix input {
+    width: 100%;
+  }
+
+  .focusedSequencer {
+    grid-template-columns: repeat(8, minmax(30px, 1fr));
+  }
+
+  .mixerStrip {
+    grid-template-columns: 8px 1fr;
+  }
+
+  .mixerStrip input,
+  .mixerStrip button {
+    grid-column: 2;
   }
 }
