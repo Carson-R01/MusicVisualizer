@@ -648,7 +648,37 @@ input[type="range"] {
 
 .instrumentList {
   display: grid;
+  gap: 16px;
+}
+
+.instrumentCategory {
+  display: grid;
   gap: 8px;
+}
+
+.instrumentCategoryHeader {
+  min-height: 24px;
+  padding: 0 2px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #ffcf70;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.instrumentCategoryHeader small {
+  min-width: 24px;
+  height: 20px;
+  border: 1px solid rgba(255, 207, 112, 0.24);
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #d3dae3;
+  background: rgba(255, 207, 112, 0.08);
+  font-size: 0.72rem;
 }
 
 .instrumentTile {
@@ -1074,8 +1104,10 @@ input[type="range"] {
   grid-column: 3;
   grid-row: 3 / 5;
   padding: 12px;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   min-height: 0;
+  min-width: 0;
 }
 
 .mixerHeader {
@@ -1090,12 +1122,13 @@ input[type="range"] {
 
 .mixerStrip {
   min-height: 74px;
+  min-width: 0;
   padding: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   display: grid;
-  grid-template-columns: 8px minmax(64px, 1fr) minmax(86px, 1fr) 64px 36px;
-  gap: 10px;
+  grid-template-columns: 8px minmax(0, 1fr) minmax(72px, 96px) 58px 34px;
+  gap: 8px;
   align-items: center;
   background: #12161b;
 }
@@ -1108,14 +1141,23 @@ input[type="range"] {
 }
 
 .mixerStrip strong {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mixerStrip input {
+  min-width: 0;
+  width: 100%;
 }
 
 .mixerStrip button {
   min-height: 34px;
+  min-width: 0;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 8px;
+  padding: 0 8px;
   background: rgba(255, 255, 255, 0.08);
   font-weight: 800;
 }
@@ -1126,7 +1168,7 @@ input[type="range"] {
 }
 
 .mixerStrip .removeTrackButton {
-  width: 36px;
+  width: 34px;
   padding: 0;
   display: grid;
   place-items: center;

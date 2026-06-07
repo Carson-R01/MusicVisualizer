@@ -90,24 +90,118 @@ function makeSampleTrack() {
 
 const stepCount = 16;
 
+const drumPattern = [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0];
+const backbeatPattern = [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0];
+const hatPattern = [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0];
+const melodicPattern = [1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0];
+const sparsePattern = [1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0];
+
 const instrumentLibrary = [
-  { id: 'kick', name: 'Kick', color: '#ff6b35', defaultVolume: 0.9, pattern: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0] },
-  { id: 'snare', name: 'Snare', color: '#ffd166', defaultVolume: 0.72, pattern: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0] },
-  { id: 'clap', name: 'Clap', color: '#ff4f9a', defaultVolume: 0.62, pattern: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0] },
-  { id: 'hat', name: 'Hat', color: '#52f7d2', defaultVolume: 0.46, pattern: [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0] },
-  { id: 'bass', name: 'Bass', color: '#70d6ff', defaultVolume: 0.66, pattern: [1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0] },
-  { id: 'lead', name: 'Lead', color: '#c9f31d', defaultVolume: 0.48, pattern: [0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0] },
-  { id: 'guitar', name: 'Guitar', color: '#b892ff', defaultVolume: 0.58, pattern: [1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0] },
+  { id: 'kick', name: 'Kick', category: 'Drums', color: '#ff6b35', defaultVolume: 0.9, engine: 'kick', pattern: drumPattern },
+  { id: 'deepkick', name: 'Deep Kick', category: 'Drums', color: '#ff7f50', defaultVolume: 0.86, engine: 'kick', pattern: drumPattern },
+  { id: 'snare', name: 'Snare', category: 'Drums', color: '#ffd166', defaultVolume: 0.72, engine: 'snare', pattern: backbeatPattern },
+  { id: 'rim', name: 'Rimshot', category: 'Drums', color: '#ffbd59', defaultVolume: 0.54, engine: 'rim', pattern: backbeatPattern },
+  { id: 'clap', name: 'Clap', category: 'Drums', color: '#ff4f9a', defaultVolume: 0.62, engine: 'clap', pattern: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0] },
+  { id: 'snap', name: 'Snap', category: 'Drums', color: '#ff70a6', defaultVolume: 0.42, engine: 'rim', pattern: backbeatPattern },
+  { id: 'hat', name: 'Hat', category: 'Drums', color: '#52f7d2', defaultVolume: 0.46, engine: 'hat', pattern: hatPattern },
+  { id: 'openhat', name: 'Open Hat', category: 'Drums', color: '#6fffe0', defaultVolume: 0.38, engine: 'openhat', pattern: [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0] },
+  { id: 'ride', name: 'Ride', category: 'Drums', color: '#a7fff0', defaultVolume: 0.36, engine: 'openhat', pattern: hatPattern },
+  { id: 'shaker', name: 'Shaker', category: 'Percussion', color: '#9df7d7', defaultVolume: 0.34, engine: 'shaker', pattern: hatPattern },
+  { id: 'tambourine', name: 'Tambourine', category: 'Percussion', color: '#baffdc', defaultVolume: 0.36, engine: 'shaker', pattern: hatPattern },
+  { id: 'crash', name: 'Crash', category: 'Percussion', color: '#f7e36f', defaultVolume: 0.42, engine: 'crash', pattern: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 'tom', name: 'Tom', category: 'Percussion', color: '#f59f62', defaultVolume: 0.58, engine: 'tom', pattern: [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0] },
+  { id: 'conga', name: 'Conga', category: 'Percussion', color: '#e9a06f', defaultVolume: 0.48, engine: 'perc', pattern: [0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0] },
+  { id: 'perc', name: 'Perc', category: 'Percussion', color: '#f3c178', defaultVolume: 0.48, engine: 'perc', pattern: [0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0] },
+  { id: '808', name: '808 Bass', category: 'Bass', color: '#ff884d', defaultVolume: 0.76, engine: 'kick', pattern: melodicPattern },
+  { id: 'bass', name: 'Bass', category: 'Bass', color: '#70d6ff', defaultVolume: 0.66, engine: 'bass', pattern: melodicPattern },
+  { id: 'subbass', name: 'Sub Bass', category: 'Bass', color: '#4cc9f0', defaultVolume: 0.68, engine: 'subbass', pattern: melodicPattern },
+  { id: 'acidbass', name: 'Acid Bass', category: 'Bass', color: '#89f0ff', defaultVolume: 0.56, engine: 'acidbass', pattern: melodicPattern },
+  { id: 'reese', name: 'Reese Bass', category: 'Bass', color: '#56cfe1', defaultVolume: 0.58, engine: 'acidbass', pattern: melodicPattern },
+  { id: 'lead', name: 'Lead', category: 'Synths', color: '#c9f31d', defaultVolume: 0.48, engine: 'lead', pattern: [0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0] },
+  { id: 'supersaw', name: 'Supersaw', category: 'Synths', color: '#d7ff36', defaultVolume: 0.46, engine: 'pad', pattern: sparsePattern },
+  { id: 'pluck', name: 'Synth Pluck', category: 'Synths', color: '#d6ff6b', defaultVolume: 0.48, engine: 'pluck', pattern: sparsePattern },
+  { id: 'arp', name: 'Arp', category: 'Synths', color: '#e9ff70', defaultVolume: 0.44, engine: 'arp', pattern: hatPattern },
+  { id: 'pad', name: 'Pad', category: 'Synths', color: '#9bdbff', defaultVolume: 0.42, engine: 'pad', pattern: sparsePattern },
+  { id: 'drone', name: 'Drone', category: 'Synths', color: '#89c2d9', defaultVolume: 0.34, engine: 'pad', pattern: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 'keys', name: 'Keys', category: 'Keys', color: '#f6f7c4', defaultVolume: 0.54, engine: 'keys', pattern: sparsePattern },
+  { id: 'piano', name: 'Piano', category: 'Keys', color: '#f8f9fa', defaultVolume: 0.56, engine: 'piano', pattern: sparsePattern },
+  { id: 'epiano', name: 'Electric Piano', category: 'Keys', color: '#fff3b0', defaultVolume: 0.52, engine: 'keys', pattern: sparsePattern },
+  { id: 'organ', name: 'Organ', category: 'Keys', color: '#caffbf', defaultVolume: 0.5, engine: 'organ', pattern: sparsePattern },
+  { id: 'bell', name: 'Bell', category: 'Mallets', color: '#bde0fe', defaultVolume: 0.46, engine: 'bell', pattern: sparsePattern },
+  { id: 'vibes', name: 'Vibes', category: 'Mallets', color: '#a2d2ff', defaultVolume: 0.44, engine: 'bell', pattern: sparsePattern },
+  { id: 'marimba', name: 'Marimba', category: 'Mallets', color: '#ffc8dd', defaultVolume: 0.5, engine: 'marimba', pattern: sparsePattern },
+  { id: 'xylophone', name: 'Xylophone', category: 'Mallets', color: '#ffcad4', defaultVolume: 0.48, engine: 'marimba', pattern: sparsePattern },
+  { id: 'guitar', name: 'Guitar', category: 'Guitars', color: '#b892ff', defaultVolume: 0.58, engine: 'guitar', pattern: sparsePattern },
+  { id: 'mutedguitar', name: 'Muted Guitar', category: 'Guitars', color: '#a78bfa', defaultVolume: 0.5, engine: 'mutedguitar', pattern: hatPattern },
+  { id: 'harp', name: 'Harp', category: 'Guitars', color: '#c8b6ff', defaultVolume: 0.48, engine: 'guitar', pattern: sparsePattern },
+  { id: 'strings', name: 'Strings', category: 'Orchestral', color: '#ffafcc', defaultVolume: 0.46, engine: 'strings', pattern: sparsePattern },
+  { id: 'violin', name: 'Violin', category: 'Orchestral', color: '#ffb3c6', defaultVolume: 0.42, engine: 'strings', pattern: sparsePattern },
+  { id: 'cello', name: 'Cello', category: 'Orchestral', color: '#c9184a', defaultVolume: 0.44, engine: 'strings', pattern: sparsePattern },
+  { id: 'brass', name: 'Brass', category: 'Orchestral', color: '#ffcf70', defaultVolume: 0.5, engine: 'brass', pattern: sparsePattern },
+  { id: 'trumpet', name: 'Trumpet', category: 'Orchestral', color: '#ffd60a', defaultVolume: 0.46, engine: 'brass', pattern: sparsePattern },
+  { id: 'flute', name: 'Flute', category: 'Winds', color: '#caf0f8', defaultVolume: 0.44, engine: 'flute', pattern: sparsePattern },
+  { id: 'sax', name: 'Sax', category: 'Winds', color: '#f4a261', defaultVolume: 0.48, engine: 'sax', pattern: sparsePattern },
+  { id: 'clarinet', name: 'Clarinet', category: 'Winds', color: '#90e0ef', defaultVolume: 0.42, engine: 'flute', pattern: sparsePattern },
+  { id: 'choir', name: 'Choir', category: 'Vocals', color: '#d0bfff', defaultVolume: 0.42, engine: 'choir', pattern: sparsePattern },
+  { id: 'vocalpad', name: 'Vocal Pad', category: 'Vocals', color: '#e0b1ff', defaultVolume: 0.38, engine: 'choir', pattern: sparsePattern },
+  { id: 'fx', name: 'Noise FX', category: 'FX', color: '#adb5bd', defaultVolume: 0.36, engine: 'fx', pattern: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0] },
+  { id: 'riser', name: 'Riser', category: 'FX', color: '#ced4da', defaultVolume: 0.34, engine: 'fx', pattern: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 'impact', name: 'Impact', category: 'FX', color: '#dee2e6', defaultVolume: 0.42, engine: 'crash', pattern: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
 ];
+
+const instrumentCategories = [...new Set(instrumentLibrary.map((instrument) => instrument.category))];
 
 const pianoRollNotes = {
   kick: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
+  deepkick: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
+  808: ['C2', 'A#1', 'G1', 'F1', 'D#1', 'C1'],
   snare: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
+  rim: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
   clap: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
+  snap: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
   hat: ['C6', 'A#5', 'G5', 'F5', 'D#5', 'C5', 'A#4', 'G4'],
+  openhat: ['C6', 'A#5', 'G5', 'F5', 'D#5', 'C5', 'A#4', 'G4'],
+  ride: ['C6', 'A#5', 'G5', 'F5', 'D#5', 'C5', 'A#4', 'G4'],
+  shaker: ['C6', 'A#5', 'G5', 'F5', 'D#5', 'C5', 'A#4', 'G4'],
+  tambourine: ['C6', 'A#5', 'G5', 'F5', 'D#5', 'C5', 'A#4', 'G4'],
+  crash: ['C6', 'A#5', 'G5', 'F5', 'D#5', 'C5', 'A#4', 'G4'],
+  tom: ['C4', 'A#3', 'G3', 'F3', 'D#3', 'C3', 'A#2', 'G2'],
+  conga: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
+  perc: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
   bass: ['C2', 'A#1', 'G1', 'F1', 'D#1', 'C1'],
+  subbass: ['C2', 'A#1', 'G1', 'F1', 'D#1', 'C1'],
+  acidbass: ['C2', 'A#1', 'G1', 'F1', 'D#1', 'C1'],
+  reese: ['C2', 'A#1', 'G1', 'F1', 'D#1', 'C1'],
   lead: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
+  supersaw: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
+  pluck: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
+  arp: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
+  pad: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
+  drone: ['C4', 'A#3', 'G3', 'F3', 'D#3', 'C3', 'A#2', 'G2'],
+  keys: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
+  piano: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3', 'F3', 'D#3', 'C3'],
+  epiano: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3', 'F3', 'D#3', 'C3'],
+  organ: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
+  bell: ['C6', 'A#5', 'G5', 'F5', 'D#5', 'C5', 'A#4', 'G4'],
+  vibes: ['C6', 'A#5', 'G5', 'F5', 'D#5', 'C5', 'A#4', 'G4'],
+  marimba: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
+  xylophone: ['C6', 'A#5', 'G5', 'F5', 'D#5', 'C5', 'A#4', 'G4'],
   guitar: ['C4', 'A#3', 'G3', 'F3', 'D#3', 'C3', 'A#2', 'G2', 'F2'],
+  mutedguitar: ['C4', 'A#3', 'G3', 'F3', 'D#3', 'C3', 'A#2', 'G2', 'F2'],
+  harp: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3', 'F3'],
+  strings: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
+  violin: ['C6', 'A#5', 'G5', 'F5', 'D#5', 'C5', 'A#4', 'G4'],
+  cello: ['C4', 'A#3', 'G3', 'F3', 'D#3', 'C3', 'A#2', 'G2'],
+  brass: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
+  trumpet: ['C6', 'A#5', 'G5', 'F5', 'D#5', 'C5', 'A#4', 'G4'],
+  flute: ['C6', 'A#5', 'G5', 'F5', 'D#5', 'C5', 'A#4', 'G4'],
+  sax: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
+  clarinet: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
+  choir: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
+  vocalpad: ['C5', 'A#4', 'G4', 'F4', 'D#4', 'C4', 'A#3', 'G3'],
+  fx: ['C6', 'A#5', 'G5', 'F5', 'D#5', 'C5', 'A#4', 'G4'],
+  riser: ['C6', 'A#5', 'G5', 'F5', 'D#5', 'C5', 'A#4', 'G4'],
+  impact: ['C6', 'A#5', 'G5', 'F5', 'D#5', 'C5', 'A#4', 'G4'],
 };
 
 const noteLengthOptions = [0.5, 1, 1.5, 2, 4];
@@ -117,7 +211,15 @@ const getNotePitch = (note) => (typeof note === 'string' ? note : note.pitch);
 const createNoteEvent = (pitch, length = 1) => ({ pitch, length });
 
 const getInstrument = (instrumentId) => instrumentLibrary.find((instrument) => instrument.id === instrumentId) || instrumentLibrary[0];
+const getTrackEngine = (track) => getInstrument(track.instrumentId).engine || track.instrumentId;
 const isMelodicInstrument = (instrumentId) => Boolean(pianoRollNotes[instrumentId]);
+const getDefaultNoteLength = (instrumentId) => {
+  const engine = getInstrument(instrumentId).engine;
+  if (['pad', 'strings', 'choir', 'organ'].includes(engine)) return 4;
+  if (['bass', 'subbass', 'acidbass', 'guitar'].includes(engine)) return 2;
+  if (['hat', 'openhat', 'shaker', 'crash', 'snare', 'clap', 'rim', 'perc'].includes(engine)) return 0.5;
+  return 1;
+};
 const createDefaultNoteGrid = (instrumentId, pattern) => {
   const notes = pianoRollNotes[instrumentId] || [];
   return Array.from({ length: stepCount }, (_, step) => {
@@ -125,7 +227,7 @@ const createDefaultNoteGrid = (instrumentId, pattern) => {
     if (instrumentId === 'guitar') {
       return (step % 8 === 0 ? ['C3', 'D#3', 'G3'] : ['F2', 'G#2', 'C3']).map((note) => createNoteEvent(note, 2));
     }
-    return [notes[step % Math.max(1, notes.length)]].filter(Boolean).map((note) => createNoteEvent(note, instrumentId === 'bass' ? 2 : 1));
+    return [notes[step % Math.max(1, notes.length)]].filter(Boolean).map((note) => createNoteEvent(note, getDefaultNoteLength(instrumentId)));
   });
 };
 
@@ -156,6 +258,11 @@ function createBeatInstruments() {
       octaves: 7,
       envelope: { attack: 0.001, decay: 0.32, sustain: 0.02, release: 0.55 },
     }).connect(compressor),
+    tom: new Tone.MembraneSynth({
+      pitchDecay: 0.024,
+      octaves: 3.2,
+      envelope: { attack: 0.002, decay: 0.26, sustain: 0.04, release: 0.28 },
+    }).connect(compressor),
     snare: new Tone.NoiseSynth({
       noise: { type: 'white' },
       envelope: { attack: 0.001, decay: 0.16, sustain: 0 },
@@ -168,20 +275,106 @@ function createBeatInstruments() {
       noise: { type: 'white' },
       envelope: { attack: 0.001, decay: 0.045, sustain: 0, release: 0.015 },
     }).connect(compressor),
+    openhat: new Tone.NoiseSynth({
+      noise: { type: 'white' },
+      envelope: { attack: 0.001, decay: 0.25, sustain: 0, release: 0.08 },
+    }).connect(compressor),
+    crash: new Tone.NoiseSynth({
+      noise: { type: 'white' },
+      envelope: { attack: 0.004, decay: 0.85, sustain: 0, release: 0.2 },
+    }).connect(compressor),
+    perc: new Tone.MembraneSynth({
+      pitchDecay: 0.01,
+      octaves: 2,
+      envelope: { attack: 0.001, decay: 0.13, sustain: 0, release: 0.08 },
+    }).connect(compressor),
     bass: new Tone.MonoSynth({
       oscillator: { type: 'square' },
       filter: { Q: 1, type: 'lowpass', rolloff: -24 },
       envelope: { attack: 0.01, decay: 0.16, sustain: 0.18, release: 0.12 },
       filterEnvelope: { attack: 0.01, decay: 0.18, sustain: 0.25, release: 0.1, baseFrequency: 80, octaves: 2.2 },
     }).connect(compressor),
+    subbass: new Tone.MonoSynth({
+      oscillator: { type: 'sine' },
+      envelope: { attack: 0.008, decay: 0.12, sustain: 0.7, release: 0.18 },
+    }).connect(compressor),
+    acidbass: new Tone.MonoSynth({
+      oscillator: { type: 'sawtooth' },
+      filter: { Q: 7, type: 'lowpass', rolloff: -24 },
+      envelope: { attack: 0.006, decay: 0.12, sustain: 0.25, release: 0.1 },
+      filterEnvelope: { attack: 0.005, decay: 0.16, sustain: 0.12, release: 0.12, baseFrequency: 120, octaves: 3.5 },
+    }).connect(compressor),
     lead: new Tone.PolySynth(Tone.Synth, {
       oscillator: { type: 'triangle' },
       envelope: { attack: 0.004, decay: 0.12, sustain: 0.2, release: 0.18 },
+    }).connect(compressor),
+    pluck: new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'square' },
+      envelope: { attack: 0.002, decay: 0.16, sustain: 0.05, release: 0.08 },
+    }).connect(compressor),
+    arp: new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'sawtooth' },
+      envelope: { attack: 0.002, decay: 0.08, sustain: 0.08, release: 0.08 },
+    }).connect(compressor),
+    pad: new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'fatsawtooth', count: 3, spread: 18 },
+      envelope: { attack: 0.35, decay: 0.25, sustain: 0.75, release: 0.7 },
+    }).connect(compressor),
+    keys: new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'triangle' },
+      envelope: { attack: 0.01, decay: 0.22, sustain: 0.24, release: 0.28 },
+    }).connect(compressor),
+    piano: new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'triangle' },
+      envelope: { attack: 0.004, decay: 0.34, sustain: 0.08, release: 0.32 },
+    }).connect(compressor),
+    organ: new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'square' },
+      envelope: { attack: 0.015, decay: 0.04, sustain: 0.88, release: 0.16 },
+    }).connect(compressor),
+    bell: new Tone.PolySynth(Tone.FMSynth, {
+      harmonicity: 2.6,
+      modulationIndex: 7,
+      envelope: { attack: 0.002, decay: 0.85, sustain: 0, release: 0.25 },
+      modulationEnvelope: { attack: 0.002, decay: 0.45, sustain: 0, release: 0.15 },
+    }).connect(compressor),
+    marimba: new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'sine' },
+      envelope: { attack: 0.002, decay: 0.22, sustain: 0.02, release: 0.12 },
     }).connect(compressor),
     guitar: new Tone.PluckSynth({
       attackNoise: 0.7,
       dampening: 3400,
       resonance: 0.82,
+    }).connect(compressor),
+    mutedguitar: new Tone.PluckSynth({
+      attackNoise: 0.45,
+      dampening: 5200,
+      resonance: 0.62,
+    }).connect(compressor),
+    strings: new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'sawtooth' },
+      envelope: { attack: 0.24, decay: 0.2, sustain: 0.7, release: 0.58 },
+    }).connect(compressor),
+    brass: new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'sawtooth' },
+      envelope: { attack: 0.06, decay: 0.18, sustain: 0.56, release: 0.22 },
+    }).connect(compressor),
+    flute: new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'sine' },
+      envelope: { attack: 0.05, decay: 0.08, sustain: 0.62, release: 0.18 },
+    }).connect(compressor),
+    sax: new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'fatsawtooth', count: 2, spread: 8 },
+      envelope: { attack: 0.035, decay: 0.12, sustain: 0.48, release: 0.2 },
+    }).connect(compressor),
+    choir: new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'fatsine', count: 4, spread: 25 },
+      envelope: { attack: 0.32, decay: 0.2, sustain: 0.74, release: 0.75 },
+    }).connect(compressor),
+    fx: new Tone.NoiseSynth({
+      noise: { type: 'pink' },
+      envelope: { attack: 0.02, decay: 1.1, sustain: 0, release: 0.3 },
     }).connect(compressor),
   };
 }
@@ -189,26 +382,38 @@ function createBeatInstruments() {
 function triggerBeatSound(instruments, track, step, time, stepDuration) {
   const velocity = track.volume;
   const stepNotes = track.notes[step] || [];
-  if (track.instrumentId === 'kick') {
+  const engine = getTrackEngine(track);
+  if (engine === 'kick') {
     stepNotes.forEach((note, index) => instruments.kick.triggerAttackRelease(getNotePitch(note), getNoteDurationSeconds(note, stepDuration), time + index * 0.002, velocity));
   }
-  if (track.instrumentId === 'snare' && stepNotes.length) instruments.snare.triggerAttackRelease('16n', time, velocity);
-  if (track.instrumentId === 'clap' && stepNotes.length) instruments.clap.triggerAttackRelease('16n', time, velocity * 0.8);
-  if (track.instrumentId === 'hat' && stepNotes.length) instruments.hat.triggerAttackRelease('32n', time, velocity * 0.58);
-  if (track.instrumentId === 'bass') {
+  if (engine === 'snare' && stepNotes.length) instruments.snare.triggerAttackRelease('16n', time, velocity);
+  if (engine === 'rim' && stepNotes.length) instruments.snare.triggerAttackRelease('32n', time, velocity * 0.62);
+  if (engine === 'clap' && stepNotes.length) instruments.clap.triggerAttackRelease('16n', time, velocity * 0.8);
+  if (engine === 'hat' && stepNotes.length) instruments.hat.triggerAttackRelease('32n', time, velocity * 0.58);
+  if (engine === 'openhat' && stepNotes.length) instruments.openhat.triggerAttackRelease('8n', time, velocity * 0.52);
+  if (engine === 'shaker' && stepNotes.length) instruments.hat.triggerAttackRelease('32n', time, velocity * 0.34);
+  if (engine === 'crash' && stepNotes.length) instruments.crash.triggerAttackRelease('2n', time, velocity * 0.5);
+  if (engine === 'tom') {
+    stepNotes.forEach((note, index) => instruments.tom.triggerAttackRelease(getNotePitch(note), '8n', time + index * 0.002, velocity * 0.72));
+  }
+  if (engine === 'perc') {
+    stepNotes.forEach((note, index) => instruments.perc.triggerAttackRelease(getNotePitch(note), '16n', time + index * 0.002, velocity * 0.58));
+  }
+  if (engine === 'bass' || engine === 'subbass' || engine === 'acidbass') {
     const bassNote = stepNotes[0];
-    if (bassNote) instruments.bass.triggerAttackRelease(getNotePitch(bassNote), getNoteDurationSeconds(bassNote, stepDuration), time, velocity * 0.82);
+    if (bassNote) instruments[engine].triggerAttackRelease(getNotePitch(bassNote), getNoteDurationSeconds(bassNote, stepDuration), time, velocity * 0.82);
   }
-  if (track.instrumentId === 'lead') {
+  if (['lead', 'pluck', 'arp', 'pad', 'keys', 'piano', 'organ', 'bell', 'marimba', 'strings', 'brass', 'flute', 'sax', 'choir'].includes(engine)) {
     stepNotes.forEach((note, index) => {
-      instruments.lead.triggerAttackRelease(getNotePitch(note), getNoteDurationSeconds(note, stepDuration), time + index * 0.001, velocity * 0.55);
+      instruments[engine].triggerAttackRelease(getNotePitch(note), getNoteDurationSeconds(note, stepDuration), time + index * 0.001, velocity * 0.55);
     });
   }
-  if (track.instrumentId === 'guitar') {
+  if (engine === 'guitar' || engine === 'mutedguitar') {
     stepNotes.forEach((note, index) => {
-      instruments.guitar.triggerAttack(getNotePitch(note), time + index * 0.015, velocity * 0.64);
+      instruments[engine].triggerAttack(getNotePitch(note), time + index * 0.015, velocity * 0.64);
     });
   }
+  if (engine === 'fx' && stepNotes.length) instruments.fx.triggerAttackRelease('2n', time, velocity * 0.45);
 }
 
 const downloadBlob = (blob, filename) => {
@@ -593,19 +798,29 @@ function BeatMaker({ onBack }) {
           <h2>Instruments</h2>
         </div>
         <div className="instrumentList">
-          {instrumentLibrary.map((instrument) => (
-            <button
-              key={instrument.id}
-              type="button"
-              className="instrumentTile"
-              draggable
-              onDragStart={(event) => event.dataTransfer.setData('instrument-id', instrument.id)}
-              onClick={() => addTrack(instrument.id)}
-            >
-              <span style={{ background: instrument.color }} />
-              <strong>{instrument.name}</strong>
-              <small>Open piano roll</small>
-            </button>
+          {instrumentCategories.map((category) => (
+            <div className="instrumentCategory" key={category}>
+              <div className="instrumentCategoryHeader">
+                <span>{category}</span>
+                <small>{instrumentLibrary.filter((instrument) => instrument.category === category).length}</small>
+              </div>
+              {instrumentLibrary
+                .filter((instrument) => instrument.category === category)
+                .map((instrument) => (
+                  <button
+                    key={instrument.id}
+                    type="button"
+                    className="instrumentTile"
+                    draggable
+                    onDragStart={(event) => event.dataTransfer.setData('instrument-id', instrument.id)}
+                    onClick={() => addTrack(instrument.id)}
+                  >
+                    <span style={{ background: instrument.color }} />
+                    <strong>{instrument.name}</strong>
+                    <small>{instrument.engine}</small>
+                  </button>
+                ))}
+            </div>
           ))}
         </div>
       </section>
