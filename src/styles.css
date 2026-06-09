@@ -573,6 +573,52 @@ input[type="range"] {
   align-items: center;
 }
 
+.patternStrip {
+  grid-column: 1 / -1;
+  min-width: 0;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.patternStripLabel {
+  color: #ffcf70;
+  font-size: 0.82rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.patternTabs {
+  min-width: 0;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+}
+
+.patternTabs button {
+  width: 38px;
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  flex: 0 0 auto;
+  color: #c9d1d9;
+  background: #11161c;
+  font-weight: 900;
+}
+
+.patternTabs button.active {
+  border-color: #ff9f1c;
+  color: #101318;
+  background: #ffcf70;
+}
+
+.patternTabs button.playing {
+  box-shadow: 0 0 0 2px rgba(143, 245, 220, 0.38), 0 0 18px rgba(143, 245, 220, 0.25);
+}
+
 .exportStatus {
   color: #8ff5dc;
   font-size: 0.84rem;

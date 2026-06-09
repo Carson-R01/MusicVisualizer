@@ -245,6 +245,21 @@ const createTrack = (instrumentId, index = 0) => {
 };
 
 const createDefaultTracks = () => ['kick', 'snare', 'hat', 'bass', 'guitar'].map((instrumentId, index) => createTrack(instrumentId, index));
+const cloneTrackNotes = (notes) => notes.map((stepNotes) => stepNotes.map((note) => (
+  typeof note === 'string' ? note : { ...note }
+)));
+const cloneTracks = (tracks) => tracks.map((track) => ({
+  ...track,
+  id: `${track.instrumentId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+  pattern: [...track.pattern],
+  notes: cloneTrackNotes(track.notes),
+}));
+const createPattern = (index, tracks = []) => ({
+  id: `pattern-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+  name: `Pattern ${index + 1}`,
+  tracks,
+});
+const createDefaultPatterns = () => [createPattern(0, createDefaultTracks())];
 
 function createBeatInstruments() {
   const limiter = new Tone.Limiter(-1).toDestination();
@@ -510,47 +525,67 @@ const audioBufferToMp3Blob = (audioBuffer) => {
   return new Blob(chunks, { type: 'audio/mpeg' });
 };
 
-const renderBeatOffline = async (tracks, bpm) => {
+const renderBeatOffline = async (patterns, bpm) => {
   const stepDuration = 60 / bpm / 4;
   const repetitions = 4;
   const patternDuration = stepDuration * stepCount;
-  const renderDuration = patternDuration * repetitions + 1.2;
+  const patternsToRender = patterns.length ? patterns : [{ tracks: [] }];
+  const sequenceDuration = patternDuration * patternsToRender.length;
+  const renderDuration = sequenceDuration * repetitions + 1.2;
 
   return Tone.Offline(() => {
     const instruments = createBeatInstruments();
     for (let repeat = 0; repeat < repetitions; repeat += 1) {
-      for (let step = 0; step < stepCount; step += 1) {
-        const time = repeat * patternDuration + step * stepDuration;
-        tracks.forEach((track, trackIndex) => {
-          if (track.pattern[step] && !track.muted) {
-            triggerBeatSound(instruments, track, step, time + trackIndex * 0.001, stepDuration);
-          }
-        });
-      }
+      patternsToRender.forEach((pattern, patternIndex) => {
+        for (let step = 0; step < stepCount; step += 1) {
+          const time = repeat * sequenceDuration + patternIndex * patternDuration + step * stepDuration;
+          pattern.tracks.forEach((track, trackIndex) => {
+            if (track.pattern[step] && !track.muted) {
+              triggerBeatSound(instruments, track, step, time + trackIndex * 0.001, stepDuration);
+            }
+          });
+        }
+      });
     }
   }, renderDuration);
 };
 
 function BeatMaker({ onBack }) {
-  const [tracks, setTracks] = useState(createDefaultTracks);
+  const [patterns, setPatterns] = useState(createDefaultPatterns);
+  const [activePatternId, setActivePatternId] = useState(() => patterns[0]?.id || null);
   const [bpm, setBpm] = useState(128);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStep, setCurrentStep] = useState(-1);
+  const [currentPatternId, setCurrentPatternId] = useState(null);
   const [isDropActive, setIsDropActive] = useState(false);
   const [selectedTrackId, setSelectedTrackId] = useState(null);
   const [exportStatus, setExportStatus] = useState('');
+  const activePattern = patterns.find((pattern) => pattern.id === activePatternId) || patterns[0];
+  const tracks = activePattern?.tracks || [];
   const tracksRef = useRef(tracks);
+  const patternsRef = useRef(patterns);
   const instrumentsRef = useRef(null);
   const sequenceRef = useRef(null);
-  const stepRef = useRef(0);
+  const playbackPositionRef = useRef({ patternIndex: 0, step: 0 });
+
+  const setTracks = (updater) => {
+    setPatterns((current) => current.map((pattern) => {
+      if (pattern.id !== activePatternId) return pattern;
+      return {
+        ...pattern,
+        tracks: typeof updater === 'function' ? updater(pattern.tracks) : updater,
+      };
+    }));
+  };
 
   useEffect(() => {
     tracksRef.current = tracks;
+    patternsRef.current = patterns;
     if (!selectedTrackId && tracks.length) setSelectedTrackId(tracks[0].id);
     if (selectedTrackId && !tracks.some((track) => track.id === selectedTrackId)) {
       setSelectedTrackId(tracks[0]?.id || null);
     }
-  }, [selectedTrackId, tracks]);
+  }, [patterns, selectedTrackId, tracks]);
 
   useEffect(() => {
     Tone.Transport.bpm.value = bpm;
@@ -570,21 +605,29 @@ function BeatMaker({ onBack }) {
     if (!instrumentsRef.current) instrumentsRef.current = createBeatInstruments();
     if (!sequenceRef.current) {
       sequenceRef.current = Tone.Transport.scheduleRepeat((time) => {
-        const step = stepRef.current;
+        const patternsToPlay = patternsRef.current.length ? patternsRef.current : [{ id: 'empty', tracks: [] }];
+        const patternIndex = playbackPositionRef.current.patternIndex % patternsToPlay.length;
+        const step = playbackPositionRef.current.step;
+        const pattern = patternsToPlay[patternIndex];
         const stepDuration = 60 / Tone.Transport.bpm.value / 4;
-        tracksRef.current.forEach((track, trackIndex) => {
+        pattern.tracks.forEach((track, trackIndex) => {
           if (track.pattern[step] && !track.muted) {
             triggerBeatSound(instrumentsRef.current, track, step, time + trackIndex * 0.001, stepDuration);
           }
         });
-        Tone.Draw.schedule(() => setCurrentStep(step), time);
-        stepRef.current = (step + 1) % stepCount;
+        Tone.Draw.schedule(() => {
+          setCurrentStep(step);
+          setCurrentPatternId(pattern.id);
+        }, time);
+        playbackPositionRef.current = step === stepCount - 1
+          ? { patternIndex: (patternIndex + 1) % patternsToPlay.length, step: 0 }
+          : { patternIndex, step: step + 1 };
       }, '16n');
     }
   };
 
   const addTrack = (instrumentId) => {
-    const newTrack = createTrack(instrumentId, tracksRef.current.length);
+    const newTrack = createTrack(instrumentId, tracks.length);
     setTracks((current) => [...current, newTrack]);
     setSelectedTrackId(newTrack.id);
   };
@@ -681,10 +724,13 @@ function BeatMaker({ onBack }) {
       Tone.Transport.stop();
       setIsPlaying(false);
       setCurrentStep(-1);
-      stepRef.current = 0;
+      setCurrentPatternId(null);
+      playbackPositionRef.current = { patternIndex: 0, step: 0 };
       return;
     }
     await ensureBeatEngine();
+    const startIndex = Math.max(0, patternsRef.current.findIndex((pattern) => pattern.id === activePatternId));
+    playbackPositionRef.current = { patternIndex: startIndex, step: 0 };
     Tone.Transport.start();
     setIsPlaying(true);
   };
@@ -693,7 +739,7 @@ function BeatMaker({ onBack }) {
     setExportStatus(`Rendering ${format.toUpperCase()}...`);
     try {
       await Tone.start();
-      const rendered = await renderBeatOffline(tracksRef.current, bpm);
+      const rendered = await renderBeatOffline(patternsRef.current, bpm);
       const blob = format === 'mp3' ? audioBufferToMp3Blob(rendered) : audioBufferToWavBlob(rendered);
       downloadBlob(blob, `beat-maker-loop.${format}`);
       setExportStatus(`Downloaded ${format.toUpperCase()}`);
@@ -702,6 +748,25 @@ function BeatMaker({ onBack }) {
       console.error(error);
       setExportStatus('Export failed');
     }
+  };
+
+  const selectPattern = (patternId) => {
+    setActivePatternId(patternId);
+    const pattern = patternsRef.current.find((item) => item.id === patternId);
+    setSelectedTrackId(pattern?.tracks[0]?.id || null);
+  };
+
+  const addPattern = (mode) => {
+    setPatterns((current) => {
+      const sourcePattern = current[current.length - 1];
+      const newPattern = createPattern(
+        current.length,
+        mode === 'copy' && sourcePattern ? cloneTracks(sourcePattern.tracks) : [],
+      );
+      setActivePatternId(newPattern.id);
+      setSelectedTrackId(newPattern.tracks[0]?.id || null);
+      return [...current, newPattern];
+    });
   };
 
   const clearPattern = () => {
@@ -713,9 +778,10 @@ function BeatMaker({ onBack }) {
   };
 
   const resetPattern = () => {
-    const defaultTracks = createDefaultTracks();
-    setTracks(defaultTracks);
-    setSelectedTrackId(defaultTracks[0]?.id || null);
+    const defaultPatterns = createDefaultPatterns();
+    setPatterns(defaultPatterns);
+    setActivePatternId(defaultPatterns[0]?.id || null);
+    setSelectedTrackId(defaultPatterns[0]?.tracks[0]?.id || null);
   };
 
   const updateTrack = (trackId, updater) => {
@@ -726,6 +792,7 @@ function BeatMaker({ onBack }) {
 
   const selectedTrack = tracks.find((track) => track.id === selectedTrackId) || tracks[0];
   const selectedInstrument = selectedTrack ? getInstrument(selectedTrack.instrumentId) : null;
+  const visibleCurrentStep = currentPatternId === activePattern?.id ? currentStep : -1;
 
   return (
     <main className="beatMakerShell">
@@ -790,6 +857,29 @@ function BeatMaker({ onBack }) {
           Clear
         </button>
         <span className="exportStatus">{exportStatus}</span>
+        <div className="patternStrip">
+          <div className="patternStripLabel">Patterns</div>
+          <div className="patternTabs">
+            {patterns.map((pattern, index) => (
+              <button
+                key={pattern.id}
+                type="button"
+                className={`${pattern.id === activePattern?.id ? 'active' : ''} ${pattern.id === currentPatternId ? 'playing' : ''}`}
+                onClick={() => selectPattern(pattern.id)}
+              >
+                {index + 1}
+              </button>
+            ))}
+          </div>
+          <button type="button" className="beatIconTextButton" onClick={() => addPattern('copy')}>
+            <Plus size={17} />
+            Copy Most Recent Pattern
+          </button>
+          <button type="button" className="beatIconTextButton" onClick={() => addPattern('new')}>
+            <Plus size={17} />
+            Start New Pattern
+          </button>
+        </div>
       </section>
 
       <section className="instrumentBrowser">
@@ -871,7 +961,7 @@ function BeatMaker({ onBack }) {
                 <div className="pianoRollHeader">
                   <div />
                   {Array.from({ length: stepCount }, (_, step) => (
-                    <span key={step} className={currentStep === step ? 'playingStep' : ''}>{step + 1}</span>
+                    <span key={step} className={visibleCurrentStep === step ? 'playingStep' : ''}>{step + 1}</span>
                   ))}
                 </div>
                 {(pianoRollNotes[selectedTrack.instrumentId] || []).map((note) => (
@@ -885,7 +975,7 @@ function BeatMaker({ onBack }) {
                         <button
                           key={step}
                           type="button"
-                          className={`pianoCell ${active ? 'active' : ''} ${currentStep === step ? 'current' : ''}`}
+                          className={`pianoCell ${active ? 'active' : ''} ${visibleCurrentStep === step ? 'current' : ''}`}
                           style={active ? { '--step-color': selectedInstrument.color, '--note-span': noteLength } : undefined}
                           onClick={(event) => {
                             if (event.target.closest('.noteResizeHandle')) return;
@@ -949,7 +1039,7 @@ function BeatMaker({ onBack }) {
         <div className="rackHeader">
           <div>Playlist rack</div>
           {Array.from({ length: stepCount }, (_, step) => (
-            <span key={step} className={currentStep === step ? 'playingStep' : ''}>{step + 1}</span>
+            <span key={step} className={visibleCurrentStep === step ? 'playingStep' : ''}>{step + 1}</span>
           ))}
         </div>
         {tracks.map((track) => {
@@ -975,7 +1065,7 @@ function BeatMaker({ onBack }) {
               <button
                 key={step}
                 type="button"
-                className={`stepPad ${(isMelodicInstrument(track.instrumentId) ? track.notes[step]?.length : track.pattern[step]) ? 'active' : ''} ${currentStep === step ? 'current' : ''}`}
+                className={`stepPad ${(isMelodicInstrument(track.instrumentId) ? track.notes[step]?.length : track.pattern[step]) ? 'active' : ''} ${visibleCurrentStep === step ? 'current' : ''}`}
                 style={(isMelodicInstrument(track.instrumentId) ? track.notes[step]?.length : track.pattern[step]) ? { '--step-color': instrument.color } : undefined}
                 onClick={() => toggleStep(track.id, step)}
                 aria-label={`${track.name} step ${step + 1}`}
